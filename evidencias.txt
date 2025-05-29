@@ -1,0 +1,18 @@
+Nombre: _______________________
+Código: _______________________
+
+Capturas del sistema veterinario (CRUD, Login, Citas, Notificaciones)
+
+1. Lista de pacientes
+[Agregar imagen con fecha y hora]
+
+2. Registro de cita
+[Agregar imagen con fecha y hora]
+
+3. Notificación enviada
+[Agregar imagen con hora y fecha]
+
+4. Edición de paciente
+[Agregar imagen con fecha]
+
+Observaciones:
