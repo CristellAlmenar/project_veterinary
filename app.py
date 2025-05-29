@@ -1,36 +1,57 @@
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_sqlalchemy import SQLAlchemy
+from flask_marshmallow import Marshmallow
+import os
 
 app = Flask(__name__)
-app.config["JWT_SECRET_KEY"] = "clave-secreta"
 CORS(app)
-jwt = JWTManager(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/veterinaria'
+db = SQLAlchemy(app)
+ma = Marshmallow(app)
 
-USUARIOS = {"admin": "1234"}
+class Paciente(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100))
+    especie = db.Column(db.String(50))
+    raza = db.Column(db.String(50))
+    edad = db.Column(db.Integer)
 
-@app.route('/api/login', methods=['POST'])
-def login():
+class PacienteSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Paciente
+
+paciente_schema = PacienteSchema()
+pacientes_schema = PacienteSchema(many=True)
+
+@app.route('/pacientes', methods=['GET'])
+def get_pacientes():
+    all_pacientes = Paciente.query.all()
+    return pacientes_schema.jsonify(all_pacientes)
+
+@app.route('/pacientes', methods=['POST'])
+def add_paciente():
     data = request.json
-    usuario = data.get('usuario')
-    clave = data.get('clave')
-    if USUARIOS.get(usuario) == clave:
-        access_token = create_access_token(identity=usuario)
-        return jsonify({"mensaje": "Acceso correcto", "token": access_token}), 200
-    return jsonify({"mensaje": "Credenciales inválidas"}), 401
+    paciente = Paciente(**data)
+    db.session.add(paciente)
+    db.session.commit()
+    return paciente_schema.jsonify(paciente)
 
-@app.route('/api/mascotas', methods=['GET'])
-@jwt_required()
-def get_mascotas():
-    mascotas = [
-        {"id": 1, "nombre": "Max", "tipo": "Perro"},
-        {"id": 2, "nombre": "Misu", "tipo": "Gato"}
-    ]
-    return jsonify(mascotas), 200
+@app.route('/pacientes/<int:id>', methods=['PUT'])
+def update_paciente(id):
+    paciente = Paciente.query.get_or_404(id)
+    data = request.json
+    for key, value in data.items():
+        setattr(paciente, key, value)
+    db.session.commit()
+    return paciente_schema.jsonify(paciente)
+
+@app.route('/pacientes/<int:id>', methods=['DELETE'])
+def delete_paciente(id):
+    paciente = Paciente.query.get_or_404(id)
+    db.session.delete(paciente)
+    db.session.commit()
+    return jsonify({"message": "Eliminado"})
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-///Cristell Stephanie Almenar Gonzalez
